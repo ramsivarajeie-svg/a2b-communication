@@ -3,42 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Machine A - Full Stack Portal</title>
+    <title>M2M Full Stack Portal</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 350px; text-align: center; }
-        h2 { color: #1a73e8; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; margin-top: 10px; }
-        .btn-auth { background: #1a73e8; color: white; }
-        .btn-auth:hover { background: #1557b0; }
-        .btn-toggle { background: #34a853; color: white; height: 60px; margin-top: 20px; }
+        :root { --primary: #1a73e8; --success: #34a853; --danger: #ea4335; --gray: #5f6368; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8f9fa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 380px; text-align: center; transition: 0.3s; }
+        h2 { color: var(--primary); margin-bottom: 5px; }
+        p.subtitle { color: var(--gray); font-size: 14px; margin-bottom: 25px; }
+        input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 15px; outline: none; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 5px rgba(26,115,232,0.2); }
+        button { width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 15px; transition: 0.2s; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-main:hover { background: #1557b0; }
+        .btn-outline { background: none; color: var(--primary); border: 1px solid var(--primary); }
+        .btn-toggle { height: 70px; color: white; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
         .hidden { display: none; }
-        #msg { color: #d93025; font-size: 13px; margin-top: 10px; min-height: 15px; font-weight: bold; }
-        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+        #msg { color: var(--danger); font-size: 13px; margin-top: 15px; font-weight: 500; min-height: 18px; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 25px 0; }
     </style>
 </head>
 <body>
 
     <div id="authBox" class="card">
         <h2>M2M Portal</h2>
-        <input type="email" id="email" placeholder="Email (e.g. test@gmail.com)">
-        <input type="password" id="password" placeholder="Password (min 6 chars)">
+        <p class="subtitle">AI & DS Workshop Series</p>
         
-        <button id="signupBtn" class="btn-auth">CREATE ACCOUNT</button>
-        <button id="loginBtn" style="background:#6c757d; color:white;">LOGIN</button>
+        <input type="email" id="email" placeholder="Email Address">
+        <input type="password" id="password" placeholder="Password (6+ characters)">
+        
+        <button id="loginBtn" class="btn-main">LOGIN</button>
+        <button id="signupBtn" class="btn-outline">CREATE NEW ACCOUNT</button>
         
         <p id="msg"></p>
     </div>
 
     <div id="controlBox" class="card hidden">
         <h2>Control Panel</h2>
-        <p style="font-size: 14px; color: #5f6368;">User: <span id="activeUser" style="font-weight: bold;"></span></p>
+        <p class="subtitle">Connected as: <span id="activeUser" style="color:black; font-weight:600;"></span></p>
         <hr>
-        <p>Remote LED Status:</p>
-        <button id="ledBtn" class="btn-toggle">CONNECTING...</button>
-        <br>
-        <button style="background:none; color:#5f6368; font-size: 12px; margin-top: 20px;" onclick="location.reload()">LOGOUT</button>
+        <p style="font-weight:bold; color:var(--gray)">REMOTE MACHINE STATUS</p>
+        <button id="ledBtn" class="btn-toggle">SYNCING...</button>
+        
+        <button style="background:none; color:var(--gray); font-size: 13px; text-decoration: underline;" onclick="location.reload()">Sign Out</button>
     </div>
 
     <script type="module">
@@ -46,7 +52,8 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        const firebaseConfig = {
+        // YOUR CONFIGURATION
+       const firebaseConfig = {
   apiKey: "AIzaSyBxNbxjlu8WYFtJbVSoJaHvQ4fPHgb-28Q",
   authDomain: "a2b-communication.firebaseapp.com",
   databaseURL: "https://a2b-communication-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -59,38 +66,46 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
-
         const msgBox = document.getElementById('msg');
 
-        // --- A. REGISTRATION LOGIC ---
+        // --- REGISTER ---
         document.getElementById('signupBtn').addEventListener('click', () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            msgBox.innerText = "Registering...";
+            msgBox.style.color = "var(--primary)";
+            msgBox.innerText = "Creating account...";
 
             createUserWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
+                    // Record the registration in RTDB for Machine B to count
                     set(ref(db, 'registrations/' + userCredential.user.uid), {
                         email: email,
-                        signupTime: Date.now()
+                        timestamp: Date.now()
                     });
                     loadDashboard(email);
                 })
-                .catch((err) => msgBox.innerText = "Reg Error: " + err.message);
+                .catch((err) => {
+                    msgBox.style.color = "var(--danger)";
+                    msgBox.innerText = err.message;
+                });
         });
 
-        // --- B. LOGIN LOGIC ---
+        // --- LOGIN ---
         document.getElementById('loginBtn').addEventListener('click', () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            msgBox.innerText = "Authenticating...";
+            msgBox.style.color = "var(--primary)";
+            msgBox.innerText = "Verifying...";
 
             signInWithEmailAndPassword(auth, email, password)
                 .then(() => loadDashboard(email))
-                .catch((err) => msgBox.innerText = "Login Failed: " + err.message);
+                .catch((err) => {
+                    msgBox.style.color = "var(--danger)";
+                    msgBox.innerText = "Login Failed: User not found or wrong password.";
+                });
         });
 
-        // --- C. DASHBOARD CONTROL ---
+        // --- DASHBOARD ---
         function loadDashboard(email) {
             document.getElementById('authBox').classList.add('hidden');
             document.getElementById('controlBox').classList.remove('hidden');
@@ -103,7 +118,7 @@
                 status = snapshot.val();
                 const btn = document.getElementById('ledBtn');
                 btn.innerText = status ? "LED IS ON" : "LED IS OFF";
-                btn.style.background = status ? "#ea4335" : "#34a853";
+                btn.style.background = status ? "var(--danger)" : "var(--success)";
             });
 
             document.getElementById('ledBtn').onclick = () => {
